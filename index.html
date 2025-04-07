@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Quantum Sonification</title>
+    <script src="https://unpkg.com/tone@latest/build/Tone.js"></script>
+    <style>
+      body {
+        background: #0b0c10;
+        color: #ffffff;
+        font-family: 'Segoe UI', sans-serif;
+        text-align: center;
+        padding: 40px;
+      }
+      h1 {
+        font-size: 2.5em;
+        color: #00ffc3;
+      }
+      select, button {
+        font-size: 1.2em;
+        padding: 10px 20px;
+        margin: 10px;
+        border-radius: 8px;
+        border: none;
+        background: #1f2833;
+        color: #66fcf1;
+      }
+      .controls {
+        margin-top: 30px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Quantum Sonification</h1>
+    <p>Выберите элемент и режим преобразования спектра в звук</p>
+
+    <div class="controls">
+      <label for="elementSelect">Элемент:</label>
+      <select id="elementSelect">
+        <option value="Na">Натрий (Na)</option>
+        <option value="He">Гелий (He)</option>
+        <option value="H">Водород (H)</option>
+      </select>
+
+      <label for="modeSelect">Режим:</label>
+      <select id="modeSelect">
+        <option value="harmonic">Harmonic Synth</option>
+        <option value="musical">Musical Mapping</option>
+        <option value="sequential">Temporal Sequencer</option>
+      </select>
+
+      <br>
+      <button onclick="playSpectrum()">🎵 Воспроизвести</button>
+    </div>
+
+    <script>
+      const spectrumData = {
+        Na: [
+          { wavelength: 589.0, intensity: 1.0 },
+          { wavelength: 589.6, intensity: 0.9 }
+        ],
+        He: [
+          { wavelength: 447.1, intensity: 1.0 },
+          { wavelength: 587.6, intensity: 0.8 },
+          { wavelength: 667.8, intensity: 0.7 }
+        ],
+        H: [
+          { wavelength: 656.3, intensity: 1.0 },
+          { wavelength: 486.1, intensity: 0.9 },
+          { wavelength: 434.0, intensity: 0.8 }
+        ]
+      };
+
+      function wavelengthToFreq(wavelengthNm) {
+        const c = 299792458;
+        const wavelengthM = wavelengthNm * 1e-9;
+        const freqHz = c / wavelengthM;
+        const baseFreq = Math.log10(freqHz);
+        return 440 * Math.pow(2, baseFreq - 14);
+      }
+
+      function freqToNote(freq) {
+        const noteNames = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+        const midi = Math.round(69 + 12 * Math.log2(freq / 440));
+        const octave = Math.floor(midi / 12) - 1;
+        return noteNames[midi % 12] + octave;
+      }
+
+      function playSpectrum() {
+        const element = document.getElementById("elementSelect").value;
+        const mode = document.getElementById("modeSelect").value;
+        const lines = spectrumData[element];
+
+        const synth = new Tone.PolySynth(Tone.Synth).toDestination();
+        Tone.start();
+
+        if (mode === "harmonic") {
+          lines.forEach((line, index) => {
+            const freq = wavelengthToFreq(line.wavelength);
+            synth.triggerAttackRelease(freq, "2n", `+${index * 0.3}`, line.intensity);
+          });
+        } else if (mode === "musical") {
+          lines.forEach((line, index) => {
+            const freq = wavelengthToFreq(line.wavelength);
+            const note = freqToNote(freq);
+            synth.triggerAttackRelease(note, "2n", `+${index * 0.3}`, line.intensity);
+          });
+        } else if (mode === "sequential") {
+          lines.forEach((line, index) => {
+            const freq = wavelengthToFreq(line.wavelength);
+            synth.triggerAttackRelease(freq, "8n", `+${index * 0.4}`, line.intensity);
+          });
+        }
+      }
+    </script>
+  </body>
+</html>
