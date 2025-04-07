@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html>
   <head>
@@ -27,6 +28,19 @@
       .controls {
         margin-top: 30px;
       }
+      .spectrum {
+        margin-top: 40px;
+        height: 120px;
+        position: relative;
+        background: #111;
+        border: 1px solid #333;
+      }
+      .line {
+        position: absolute;
+        bottom: 0;
+        width: 4px;
+        border-radius: 2px;
+      }
     </style>
   </head>
   <body>
@@ -39,6 +53,7 @@
         <option value="Na">Натрий (Na)</option>
         <option value="He">Гелий (He)</option>
         <option value="H">Водород (H)</option>
+        <option value="O">Кислород (O)</option>
       </select>
 
       <label for="modeSelect">Режим:</label>
@@ -52,21 +67,32 @@
       <button onclick="playSpectrum()">🎵 Воспроизвести</button>
     </div>
 
+    <div id="spectrumDisplay" class="spectrum"></div>
+
     <script>
       const spectrumData = {
-        Na: [
-          { wavelength: 589.0, intensity: 1.0 },
-          { wavelength: 589.6, intensity: 0.9 }
+        H: [
+          { wavelength: 656.28, intensity: 1.0 },
+          { wavelength: 486.13, intensity: 0.9 },
+          { wavelength: 434.05, intensity: 0.8 },
+          { wavelength: 410.17, intensity: 0.6 }
         ],
         He: [
-          { wavelength: 447.1, intensity: 1.0 },
-          { wavelength: 587.6, intensity: 0.8 },
-          { wavelength: 667.8, intensity: 0.7 }
+          { wavelength: 447.15, intensity: 1.0 },
+          { wavelength: 587.56, intensity: 0.85 },
+          { wavelength: 667.82, intensity: 0.75 },
+          { wavelength: 706.52, intensity: 0.65 },
+          { wavelength: 728.14, intensity: 0.5 }
         ],
-        H: [
-          { wavelength: 656.3, intensity: 1.0 },
-          { wavelength: 486.1, intensity: 0.9 },
-          { wavelength: 434.0, intensity: 0.8 }
+        Na: [
+          { wavelength: 589.0, intensity: 1.0 },
+          { wavelength: 589.6, intensity: 0.95 },
+          { wavelength: 330.3, intensity: 0.4 }
+        ],
+        O: [
+          { wavelength: 615.8, intensity: 0.7 },
+          { wavelength: 630.0, intensity: 1.0 },
+          { wavelength: 636.4, intensity: 0.6 }
         ]
       };
 
@@ -85,10 +111,38 @@
         return noteNames[midi % 12] + octave;
       }
 
+      function wavelengthToColor(wavelength) {
+        if (wavelength >= 380 && wavelength <= 440) return '#8B00FF';
+        if (wavelength > 440 && wavelength <= 490) return '#0000FF';
+        if (wavelength > 490 && wavelength <= 510) return '#00FFFF';
+        if (wavelength > 510 && wavelength <= 580) return '#00FF00';
+        if (wavelength > 580 && wavelength <= 645) return '#FFFF00';
+        if (wavelength > 645 && wavelength <= 750) return '#FF0000';
+        return '#FFFFFF';
+      }
+
+      function showSpectrum(lines) {
+        const container = document.getElementById("spectrumDisplay");
+        container.innerHTML = "";
+        const minW = 380, maxW = 750;
+        lines.forEach(line => {
+          if (line.wavelength < minW || line.wavelength > maxW) return;
+          const bar = document.createElement("div");
+          bar.classList.add("line");
+          const pos = ((line.wavelength - minW) / (maxW - minW)) * 100;
+          bar.style.left = `${pos}%`;
+          bar.style.height = `${line.intensity * 100}px`;
+          bar.style.background = wavelengthToColor(line.wavelength);
+          container.appendChild(bar);
+        });
+      }
+
       function playSpectrum() {
         const element = document.getElementById("elementSelect").value;
         const mode = document.getElementById("modeSelect").value;
         const lines = spectrumData[element];
+
+        showSpectrum(lines);
 
         const synth = new Tone.PolySynth(Tone.Synth).toDestination();
         Tone.start();
@@ -112,15 +166,5 @@
         }
       }
     </script>
-  
-<div style="max-width: 800px; margin: 50px auto; text-align: left; color: #cccccc;">
-  <h2 style="color: #00ffc3;">Описание режимов</h2>
-  <ul>
-    <li><strong>Harmonic Synth</strong> — каждая спектральная линия преобразуется в частоту звука напрямую. Это научно-точный способ, придающий материалу его «чистый» звук.</li>
-    <li><strong>Musical Mapping</strong> — спектральные частоты прижимаются к ближайшим музыкальным нотам. Звучит более музыкально, удобно для прослушивания и сравнений.</li>
-    <li><strong>Temporal Sequencer</strong> — спектральные линии проигрываются поочерёдно, как шаги секвенсора. Каждая линия становится ноткой во временной последовательности.</li>
-  </ul>
-</div>
-
-</body>
+  </body>
 </html>
