@@ -1,150 +1,170 @@
 
 <!DOCTYPE html>
 <html>
-<head>
-  <title>Quantum Sonification</title>
-  <script src="https://unpkg.com/tone@latest/build/Tone.js"></script>
-  <style>
-    body {
-      background: #0b0c10;
-      color: #ffffff;
-      font-family: 'Segoe UI', sans-serif;
-      text-align: center;
-      padding: 40px;
-    }
-    .element-buttons {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 10px;
-      margin-bottom: 20px;
-    }
-    .element-buttons button {
-      padding: 10px 20px;
-      border-radius: 6px;
-      border: 2px solid #66fcf1;
-      background: #0d1a2d;
-      color: #66fcf1;
-      font-size: 16px;
-      cursor: pointer;
-    }
-    .element-buttons button.active {
-      background: #66fcf1;
-      color: #0b0c10;
-    }
-    .spectrum {
-      margin-top: 40px;
-      height: 120px;
-      position: relative;
-      background: #111;
-      border: 1px solid #333;
-    }
-    .line {
-      position: absolute;
-      bottom: 0;
-      width: 4px;
-      border-radius: 2px;
-      animation: pulse 0.8s ease-in-out infinite alternate;
-    }
-    @keyframes pulse {
-      from { transform: scaleY(0.8); opacity: 0.6; }
-      to { transform: scaleY(1.2); opacity: 1; }
-    }
-  </style>
-</head>
-<body>
-  <h1>Quantum Sonification</h1>
-  <div class="element-buttons" id="elementButtons"></div>
-  <button onclick="playSpectrum()">🎵 Воспроизвести</button>
-  <div id="spectrumDisplay" class="spectrum"></div>
+  <head>
+    <title>Quantum Sonification</title>
+    <script src="https://unpkg.com/tone@latest/build/Tone.js"></script>
+    <style>
+      body {
+        background: #0b0c10;
+        color: #ffffff;
+        font-family: 'Segoe UI', sans-serif;
+        text-align: center;
+        padding: 40px;
+      }
+      h1 {
+        font-size: 2.5em;
+        color: #00ffc3;
+      }
+      select, button {
+        font-size: 1.2em;
+        padding: 10px 20px;
+        margin: 10px;
+        border-radius: 8px;
+        border: none;
+        background: #1f2833;
+        color: #66fcf1;
+      }
+      .controls {
+        margin-top: 30px;
+      }
+      .spectrum {
+        margin-top: 40px;
+        height: 120px;
+        position: relative;
+        background: #111;
+        border: 1px solid #333;
+      }
+      .line {
+        position: absolute;
+        bottom: 0;
+        width: 4px;
+        border-radius: 2px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Quantum Sonification</h1>
+    <p>Выберите элемент и режим преобразования спектра в звук</p>
 
-  <script>
-    const elements = ['H','He','Li','Be','B','C','N','O','F','Ne','Na','Mg','Al','Si','P','S','Cl','Ar','K','Ca'];
-    const spectrumData = {
-      H: [{ wavelength: 656.28, intensity: 1.0 }],
-      He: [{ wavelength: 447.15, intensity: 1.0 }],
-      Li: [{ wavelength: 670.78, intensity: 1.0 }],
-      Be: [{ wavelength: 313.04, intensity: 0.9 }],
-      B: [{ wavelength: 249.67, intensity: 0.85 }],
-      C: [{ wavelength: 247.86, intensity: 1.0 }],
-      N: [{ wavelength: 174.27, intensity: 0.9 }],
-      O: [{ wavelength: 630.0, intensity: 1.0 }],
-      F: [{ wavelength: 685.6, intensity: 0.7 }],
-      Ne: [{ wavelength: 585.2, intensity: 1.0 }],
-      Na: [{ wavelength: 589.0, intensity: 1.0 }],
-      Mg: [{ wavelength: 285.2, intensity: 1.0 }],
-      Al: [{ wavelength: 396.15, intensity: 0.9 }],
-      Si: [{ wavelength: 288.16, intensity: 1.0 }],
-      P: [{ wavelength: 253.4, intensity: 0.8 }],
-      S: [{ wavelength: 246.1, intensity: 0.9 }],
-      Cl: [{ wavelength: 837.59, intensity: 0.75 }],
-      Ar: [{ wavelength: 696.54, intensity: 1.0 }],
-      K: [{ wavelength: 766.5, intensity: 1.0 }],
-      Ca: [{ wavelength: 422.67, intensity: 1.0 }]
-    };
-    let selectedElement = 'H';
+    <div class="controls">
+      <label for="elementSelect">Элемент:</label>
+      <select id="elementSelect">
+        <option value="Na">Натрий (Na)</option>
+        <option value="He">Гелий (He)</option>
+        <option value="H">Водород (H)</option>
+        <option value="O">Кислород (O)</option>
+      </select>
 
-    const buttonsContainer = document.getElementById("elementButtons");
-    elements.forEach(el => {
-      const btn = document.createElement("button");
-      btn.textContent = el;
-      btn.onclick = () => selectElement(el);
-      buttonsContainer.appendChild(btn);
-    });
+      <label for="modeSelect">Режим:</label>
+      <select id="modeSelect">
+        <option value="harmonic">Harmonic Synth</option>
+        <option value="musical">Musical Mapping</option>
+        <option value="sequential">Temporal Sequencer</option>
+      </select>
 
-    function selectElement(el) {
-      selectedElement = el;
-      document.querySelectorAll(".element-buttons button").forEach(b => b.classList.remove("active"));
-      const btn = [...document.querySelectorAll(".element-buttons button")].find(b => b.textContent === el);
-      if (btn) btn.classList.add("active");
-      showSpectrum(spectrumData[el]);
-    }
+      <br>
+      <button onclick="playSpectrum()">🎵 Воспроизвести</button>
+    </div>
 
-    function wavelengthToColor(wavelength) {
-      if (wavelength >= 380 && wavelength <= 440) return '#8B00FF';
-      if (wavelength > 440 && wavelength <= 490) return '#0000FF';
-      if (wavelength > 490 && wavelength <= 510) return '#00FFFF';
-      if (wavelength > 510 && wavelength <= 580) return '#00FF00';
-      if (wavelength > 580 && wavelength <= 645) return '#FFFF00';
-      if (wavelength > 645 && wavelength <= 750) return '#FF0000';
-      return '#FFFFFF';
-    }
+    <div id="spectrumDisplay" class="spectrum"></div>
 
-    function wavelengthToFreq(wavelengthNm) {
-      const c = 299792458;
-      const wavelengthM = wavelengthNm * 1e-9;
-      const freqHz = c / wavelengthM;
-      const baseFreq = Math.log10(freqHz);
-      return 440 * Math.pow(2, baseFreq - 14);
-    }
+    <script>
+      const spectrumData = {
+        H: [
+          { wavelength: 656.28, intensity: 1.0 },
+          { wavelength: 486.13, intensity: 0.9 },
+          { wavelength: 434.05, intensity: 0.8 },
+          { wavelength: 410.17, intensity: 0.6 }
+        ],
+        He: [
+          { wavelength: 447.15, intensity: 1.0 },
+          { wavelength: 587.56, intensity: 0.85 },
+          { wavelength: 667.82, intensity: 0.75 },
+          { wavelength: 706.52, intensity: 0.65 },
+          { wavelength: 728.14, intensity: 0.5 }
+        ],
+        Na: [
+          { wavelength: 589.0, intensity: 1.0 },
+          { wavelength: 589.6, intensity: 0.95 },
+          { wavelength: 330.3, intensity: 0.4 }
+        ],
+        O: [
+          { wavelength: 615.8, intensity: 0.7 },
+          { wavelength: 630.0, intensity: 1.0 },
+          { wavelength: 636.4, intensity: 0.6 }
+        ]
+      };
 
-    function showSpectrum(lines) {
-      const container = document.getElementById("spectrumDisplay");
-      container.innerHTML = "";
-      const minW = 380, maxW = 750;
-      lines.forEach(line => {
-        if (line.wavelength < minW || line.wavelength > maxW) return;
-        const bar = document.createElement("div");
-        bar.classList.add("line");
-        const pos = ((line.wavelength - minW) / (maxW - minW)) * 100;
-        bar.style.left = `${pos}%`;
-        bar.style.height = `${line.intensity * 100}px`;
-        bar.style.background = wavelengthToColor(line.wavelength);
-        container.appendChild(bar);
-      });
-    }
+      function wavelengthToFreq(wavelengthNm) {
+        const c = 299792458;
+        const wavelengthM = wavelengthNm * 1e-9;
+        const freqHz = c / wavelengthM;
+        const baseFreq = Math.log10(freqHz);
+        return 440 * Math.pow(2, baseFreq - 14);
+      }
 
-    function playSpectrum() {
-      const lines = spectrumData[selectedElement];
-      const synth = new Tone.PolySynth(Tone.Synth).toDestination();
-      Tone.start();
-      lines.forEach((line, index) => {
-        const freq = wavelengthToFreq(line.wavelength);
-        synth.triggerAttackRelease(freq, "2n", `+${index * 0.3}`, line.intensity);
-      });
-    }
+      function freqToNote(freq) {
+        const noteNames = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+        const midi = Math.round(69 + 12 * Math.log2(freq / 440));
+        const octave = Math.floor(midi / 12) - 1;
+        return noteNames[midi % 12] + octave;
+      }
 
-    selectElement('H');
-  </script>
-</body>
+      function wavelengthToColor(wavelength) {
+        if (wavelength >= 380 && wavelength <= 440) return '#8B00FF';
+        if (wavelength > 440 && wavelength <= 490) return '#0000FF';
+        if (wavelength > 490 && wavelength <= 510) return '#00FFFF';
+        if (wavelength > 510 && wavelength <= 580) return '#00FF00';
+        if (wavelength > 580 && wavelength <= 645) return '#FFFF00';
+        if (wavelength > 645 && wavelength <= 750) return '#FF0000';
+        return '#FFFFFF';
+      }
+
+      function showSpectrum(lines) {
+        const container = document.getElementById("spectrumDisplay");
+        container.innerHTML = "";
+        const minW = 380, maxW = 750;
+        lines.forEach(line => {
+          if (line.wavelength < minW || line.wavelength > maxW) return;
+          const bar = document.createElement("div");
+          bar.classList.add("line");
+          const pos = ((line.wavelength - minW) / (maxW - minW)) * 100;
+          bar.style.left = `${pos}%`;
+          bar.style.height = `${line.intensity * 100}px`;
+          bar.style.background = wavelengthToColor(line.wavelength);
+          container.appendChild(bar);
+        });
+      }
+
+      function playSpectrum() {
+        const element = document.getElementById("elementSelect").value;
+        const mode = document.getElementById("modeSelect").value;
+        const lines = spectrumData[element];
+
+        showSpectrum(lines);
+
+        const synth = new Tone.PolySynth(Tone.Synth).toDestination();
+        Tone.start();
+
+        if (mode === "harmonic") {
+          lines.forEach((line, index) => {
+            const freq = wavelengthToFreq(line.wavelength);
+            synth.triggerAttackRelease(freq, "2n", `+${index * 0.3}`, line.intensity);
+          });
+        } else if (mode === "musical") {
+          lines.forEach((line, index) => {
+            const freq = wavelengthToFreq(line.wavelength);
+            const note = freqToNote(freq);
+            synth.triggerAttackRelease(note, "2n", `+${index * 0.3}`, line.intensity);
+          });
+        } else if (mode === "sequential") {
+          lines.forEach((line, index) => {
+            const freq = wavelengthToFreq(line.wavelength);
+            synth.triggerAttackRelease(freq, "8n", `+${index * 0.4}`, line.intensity);
+          });
+        }
+      }
+    </script>
+  </body>
 </html>
